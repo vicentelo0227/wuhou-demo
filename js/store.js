@@ -2,7 +2,8 @@
 (function () {
   var KEY = 'wuhou-cart-v1';
   var listeners = [];
-  var state = { items: [], saved: [], order: null };
+  var state = { items: [], saved: [], order: null, promo: null, ship: 'home' };
+  var SHIP_FEE = { home: 120, store: 60, pickup: 0 };
 
   // localStorage 在無痕視窗或關閉站台資料時會直接丟例外，一律包起來
   function read() {
@@ -17,11 +18,28 @@
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 存不了就只活在這次瀏覽 */ }
   }
 
+  function known(it) {
+    if (!it || typeof it !== 'object') return false;
+    return it.type === 'addon' ? !!WUHOU.findAddon(it.id) : !!WUHOU.find(it.id);
+  }
+  // 載入時就把下架品項清掉、數量夾回範圍，之後畫面索引才會跟內部陣列一致
+  function clean(list) {
+    return (Array.isArray(list) ? list : []).filter(known).map(function (it) {
+      var q = Math.round(Number(it.qty));
+      return {
+        type: it.type, id: it.id, opt: it.opt || null,
+        qty: Math.max(1, Math.min(9, isFinite(q) ? q : 1))
+      };
+    });
+  }
+
   var loaded = read();
   if (loaded) {
-    state.items = loaded.items || [];
-    state.saved = loaded.saved || [];
+    state.items = clean(loaded.items);
+    state.saved = clean(loaded.saved);
     state.order = loaded.order || null;
+    state.promo = loaded.promo || null;
+    state.ship = loaded.ship || 'home';
   }
 
   function keyOf(it) { return it.type + ':' + it.id + ':' + (it.opt || ''); }
@@ -37,17 +55,26 @@
     return o ? o.price : 0;
   }
 
-  function emit() { write(); listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
+  function notify() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
+  function emit() { write(); notify(); }
+
+  // 另一個分頁改了購物車就跟著更新，否則兩邊會互相覆蓋而且畫面數字對不上
+  window.addEventListener('storage', function (e) {
+    if (e.key && e.key !== KEY) return;
+    var o = read();
+    state.items = clean(o && o.items);
+    state.saved = clean(o && o.saved);
+    state.order = (o && o.order) || null;
+    state.promo = (o && o.promo) || null;
+    state.ship = (o && o.ship) || 'home';
+    notify();                                   // 只通知，不回寫，避免兩個分頁互相觸發
+    window.dispatchEvent(new CustomEvent('wuhou:sync'));
+  });
 
   var Store = {
     onChange: function (fn) { listeners.push(fn); return fn; },
 
-    items: function () {
-      // 過濾掉資料裡已不存在的品項，避免舊 localStorage 讓頁面爆掉
-      return state.items.filter(function (it) {
-        return it.type === 'addon' ? !!WUHOU.findAddon(it.id) : !!WUHOU.find(it.id);
-      });
-    },
+    items: function () { return state.items.slice(); },
     saved: function () { return state.saved.slice(); },
 
     count: function () {
@@ -89,17 +116,24 @@
 
     priceOf: priceOf,
 
-    // 金額摘要：小計、運費、折扣、總計 —— 運費一定要在購物車就算出來
+    ship: function (v) {
+      if (v === undefined) return state.ship || 'home';
+      if (SHIP_FEE[v] !== undefined) { state.ship = v; emit(); }
+      return state.ship;
+    },
+
+    // 免運門檻用「折扣前小計」判斷，否則打了折反而冒出運費、總價變高，客戶會看不懂
     totals: function (promo) {
-      var subtotal = Store.items().reduce(function (n, it) { return n + priceOf(it) * it.qty; }, 0);
-      var discount = 0;
-      if (promo && subtotal > 0) discount = Math.round(subtotal * 0.1);
-      var after = subtotal - discount;
-      var shipping = (after >= WUHOU.freeShipping || after === 0) ? 0 : WUHOU.shippingFee;
+      var subtotal = state.items.reduce(function (n, it) { return n + priceOf(it) * it.qty; }, 0);
+      var discount = (promo && subtotal > 0) ? Math.round(subtotal * 0.1) : 0;
+      var fee = SHIP_FEE[state.ship];
+      if (fee === undefined) fee = SHIP_FEE.home;
+      var free = subtotal === 0 || subtotal >= WUHOU.freeShipping;
+      var shipping = free ? 0 : fee;
       return {
         subtotal: subtotal, discount: discount, shipping: shipping,
-        total: after + shipping,
-        toFree: Math.max(0, WUHOU.freeShipping - after)
+        total: subtotal - discount + shipping,
+        toFree: Math.max(0, WUHOU.freeShipping - subtotal)
       };
     },
 

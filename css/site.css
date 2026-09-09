@@ -39,7 +39,7 @@ input,select,textarea{font:inherit;color:inherit}
 /* ---------- header ---------- */
 .hd{position:sticky;top:0;z-index:60;background:rgba(22,17,13,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .hd-in{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:1.05rem}
-.brand{font-size:1.15rem;letter-spacing:.3em;font-weight:400}
+.brand{font-size:1.15rem;letter-spacing:.3em;font-weight:400;display:inline-flex;align-items:center;min-height:44px}
 .nav{display:flex;gap:2rem;font-size:.85rem;color:var(--muted)}
 .nav a:hover,.nav a[aria-current]{color:var(--gold)}
 .hd-cart{display:flex;align-items:center;gap:.45rem;font-size:.85rem;color:var(--muted);min-height:44px;padding-inline:.2rem}
@@ -96,7 +96,7 @@ input,select,textarea{font:inherit;color:inherit}
 .panel{border:1px solid var(--line);padding:1.4rem;margin-bottom:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1.4rem}
 .panel h3{margin:0 0 .7rem;font-size:.8rem;color:var(--faint);font-weight:400;letter-spacing:.1em}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem}
-.chip{min-height:38px;padding-inline:.9rem;border:1px solid var(--line-2);font-size:.82rem;color:var(--muted);transition:all var(--t)}
+.chip{min-height:44px;padding-inline:.9rem;border:1px solid var(--line-2);font-size:.82rem;color:var(--muted);transition:all var(--t)}
 .chip:hover{border-color:var(--gold);color:var(--gold)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
 .sortsel{min-height:44px;background:none;border:1px solid var(--line-2);color:var(--muted);padding-inline:.8rem;font-size:.85rem}
@@ -110,9 +110,9 @@ input,select,textarea{font:inherit;color:inherit}
 .pdp-main{background:var(--raise);aspect-ratio:1;overflow:hidden}
 .pdp-main img{width:100%;height:100%;object-fit:cover}
 .pdp-thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.9rem;margin-top:.9rem}
-.pdp-thumbs button{aspect-ratio:1;overflow:hidden;opacity:.55;transition:opacity var(--t),outline-color var(--t);outline:1px solid transparent;outline-offset:-1px}
+.pdp-thumbs button{aspect-ratio:1;overflow:hidden;opacity:.55;transition:opacity var(--t),box-shadow var(--t)}
 .pdp-thumbs button:hover{opacity:.85}
-.pdp-thumbs button[aria-current="true"]{opacity:1;outline-color:var(--gold)}
+.pdp-thumbs button[aria-current="true"]{opacity:1;box-shadow:inset 0 0 0 2px var(--gold)}
 .pdp-thumbs img{width:100%;height:100%;object-fit:cover}
 
 .pdp h1{margin:.5rem 0 0;font-size:clamp(1.6rem,1.2rem+1.6vw,2.15rem);font-weight:300;line-height:1.5}
@@ -159,8 +159,10 @@ input,select,textarea{font:inherit;color:inherit}
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity var(--t);z-index:70}
 .scrim.on{opacity:1;pointer-events:auto}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(27rem,100%);background:var(--ground);border-left:1px solid var(--line);
-  transform:translateX(100%);transition:transform var(--t);z-index:80;display:flex;flex-direction:column}
-.drawer.on{transform:translateX(0)}
+  transform:translateX(100%);visibility:hidden;z-index:80;display:flex;flex-direction:column;
+  transition:transform .3s cubic-bezier(.215,.61,.355,1),visibility 0s linear .3s}
+.drawer.on{transform:translateX(0);visibility:visible;
+  transition:transform .3s cubic-bezier(.215,.61,.355,1),visibility 0s}
 .drawer-hd{display:flex;justify-content:space-between;align-items:center;padding:1.3rem 1.5rem;border-bottom:1px solid var(--line)}
 .drawer-hd h2{margin:0;font-size:1rem;font-weight:400;letter-spacing:.1em}
 .drawer-body{flex-grow:1;overflow-y:auto;padding:1.2rem 1.5rem}
@@ -211,7 +213,7 @@ input,select,textarea{font:inherit;color:inherit}
 .field{margin-bottom:1.1rem}
 .field label{display:block;font-size:.8rem;color:var(--faint);margin-bottom:.4rem}
 .field input,.field select,.field textarea{width:100%;min-height:48px;background:var(--raise);border:1px solid var(--line-2);padding:.6rem .8rem;font-size:.92rem}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);outline:none}
+.field input:focus-visible,.field select:focus-visible,.field textarea:focus-visible{border-color:var(--gold);outline:2px solid var(--gold);outline-offset:2px}
 .field select option{background:var(--ground)}
 .field .err{color:var(--warn);font-size:.78rem;margin-top:.35rem}
 .field.bad input,.field.bad select{border-color:var(--warn)}

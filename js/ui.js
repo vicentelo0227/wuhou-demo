@@ -1,7 +1,7 @@
 (function () {
   var IMG = 'img/';
   function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
 
   var NAV = [
     { href: 'index.html', label: '本季' },
@@ -16,7 +16,7 @@
         '<a class="brand" href="index.html">物候</a>' +
         '<nav class="nav" id="nav">' +
         NAV.map(function (n) {
-          var cur = (n.href.split('#')[0] === current) ? ' aria-current="page"' : '';
+          var cur = (n.href === current) ? ' aria-current="page"' : '';
           return '<a href="' + n.href + '"' + cur + '>' + n.label + '</a>';
         }).join('') +
         '</nav>' +
@@ -50,7 +50,17 @@
       document.getElementById('cartBtn').addEventListener('click', function () { UI.openDrawer(); });
       document.getElementById('drawerX').addEventListener('click', UI.closeDrawer);
       document.getElementById('scrim').addEventListener('click', UI.closeDrawer);
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') UI.closeDrawer(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { UI.closeDrawer(); return; }
+        if (e.key !== 'Tab') return;
+        var d = document.getElementById('drawer');
+        if (!d.classList.contains('on')) return;
+        var f = d.querySelectorAll('a[href],button,input,select,textarea');
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
 
       Store.onChange(UI.syncCount);
       UI.syncCount();
@@ -64,14 +74,38 @@
 
     openDrawer: function (justAdded) {
       UI.renderDrawer(justAdded);
-      document.getElementById('drawer').classList.add('on');
-      document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+      var d = document.getElementById('drawer');
+      UI._returnTo = document.activeElement;
+      d.classList.add('on');
+      d.setAttribute('aria-hidden', 'false');
       document.getElementById('scrim').classList.add('on');
+      document.getElementById('drawerX').focus();
     },
     closeDrawer: function () {
-      document.getElementById('drawer').classList.remove('on');
-      document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+      var d = document.getElementById('drawer');
+      if (!d.classList.contains('on')) return;
+      d.classList.remove('on');
+      d.setAttribute('aria-hidden', 'true');
       document.getElementById('scrim').classList.remove('on');
+      if (UI._returnTo && document.contains(UI._returnTo)) UI._returnTo.focus();
+      UI._returnTo = null;
+    },
+
+    // 重繪會把正在操作的按鈕整個換掉，焦點會被彈回頁面最上方。
+    // 記住它的 data-* 或 id，重繪後找回同一顆再 focus。
+    keepFocus: function (redraw) {
+      var a = document.activeElement, sel = null;
+      if (a && a !== document.body) {
+        for (var i = 0; i < a.attributes.length; i++) {
+          var n = a.attributes[i].name;
+          if (n.indexOf('data-') === 0) { sel = '[' + n + '="' + a.getAttribute(n) + '"]'; break; }
+        }
+        if (!sel && a.id) sel = '#' + a.id;
+      }
+      redraw();
+      if (!sel) return;
+      var back = document.querySelector(sel);
+      if (back && typeof back.focus === 'function') back.focus();
     },
 
     renderDrawer: function (justAdded) {
@@ -89,8 +123,10 @@
           '<img src="' + IMG + p.img + '" alt="' + esc(p.name) + '">' +
           '<div><div class="n">' + esc(p.name) + '</div>' +
           (it.opt ? '<div class="o">' + esc(it.opt) + '</div>' : '') +
-          '<div class="tools2"><button data-dec="' + i + '">−</button><span>' + it.qty + '</span>' +
-          '<button data-inc="' + i + '">＋</button><button data-rm="' + i + '">移除</button></div></div>' +
+          '<div class="tools2"><button data-dec="' + i + '" aria-label="減少 ' + esc(p.name) + ' 的數量">−</button>' +
+          '<span>' + it.qty + '</span>' +
+          '<button data-inc="' + i + '" aria-label="增加 ' + esc(p.name) + ' 的數量">＋</button>' +
+          '<button data-rm="' + i + '" aria-label="從購物袋移除 ' + esc(p.name) + '">移除</button></div></div>' +
           '<div class="p">' + money(Store.priceOf(it) * it.qty) + '</div></div>';
       }).join('');
 
@@ -127,10 +163,10 @@
         '<a class="btn" href="cart.html" style="width:100%;margin-top:1rem">前往購物袋</a>';
 
       body.querySelectorAll('[data-dec]').forEach(function (b) {
-        b.onclick = function () { var i = +b.dataset.dec; Store.setQty(i, Store.items()[i].qty - 1); UI.renderDrawer(); };
+        b.onclick = function () { var i = +b.dataset.dec; Store.setQty(i, Store.items()[i].qty - 1); UI.keepFocus(UI.renderDrawer); };
       });
       body.querySelectorAll('[data-inc]').forEach(function (b) {
-        b.onclick = function () { var i = +b.dataset.inc; Store.setQty(i, Store.items()[i].qty + 1); UI.renderDrawer(); };
+        b.onclick = function () { var i = +b.dataset.inc; Store.setQty(i, Store.items()[i].qty + 1); UI.keepFocus(UI.renderDrawer); };
       });
       body.querySelectorAll('[data-rm]').forEach(function (b) {
         b.onclick = function () { Store.remove(+b.dataset.rm); UI.renderDrawer(); };
@@ -148,13 +184,14 @@
 
     card: function (p) {
       var from = WUHOU.fromPrice(p);
+      var priceText = from === null ? '暫無現貨' : money(from);
       var multi = p.options.filter(function (o) { return o.stock !== 'na'; }).length > 1;
       var last = p.options.some(function (o) { return o.last; });
       return '<a class="card" href="product.html?id=' + p.id + '">' +
         '<div class="card-fig"><img src="' + IMG + p.img + '" alt="' + esc(p.name) + '" loading="lazy" width="900" height="900">' +
         '<div class="card-act">查看</div></div>' +
         '<div><div class="card-name">' + esc(p.name) + '</div>' +
-        '<div class="card-price">' + money(from) + (multi ? '<span style="font-family:var(--serif);font-size:.78rem"> 起</span>' : '') + '</div>' +
+        '<div class="card-price">' + priceText + (multi && from !== null ? '<span style="font-family:var(--serif);font-size:.78rem"> 起</span>' : '') + '</div>' +
         (last ? '<div class="card-flag">僅餘一件</div>' : '') + '</div></a>';
     }
   };

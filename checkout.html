@@ -6,7 +6,7 @@
 <title>結帳 — 物候 WUHOU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/site.css">
 </head>
 <body>
@@ -23,10 +23,10 @@
 UI.mount('cart.html');
 
 var step = 1;
-var form = { name:'', email:'', tel:'', ship:'home', city:'', addr:'', memo:'', pay:'cod', invoice:'donate', news:false };
+var form = { name:'', email:'', tel:'', ship:'home', city:'', addr:'', memo:'', pay:'cod', invoice:'捐贈發票', news:false };
 var errs = {};
 
-var CITIES = ['臺北市','新北市','桃園市','臺中市','臺南市','高雄市','基隆市','新竹市','新竹縣','宜蘭縣','其他'];
+var CITIES = ['','臺北市','新北市','桃園市','臺中市','臺南市','高雄市','基隆市','新竹市','新竹縣','宜蘭縣','其他'];
 
 function steps(){
   return '<div class="steps">' +
@@ -39,14 +39,15 @@ function steps(){
 function field(key, label, type, extra){
   var bad = errs[key] ? ' bad' : '';
   var val = esc(form[key] || '');
+  var aria = errs[key] ? ' aria-invalid="true" aria-describedby="e_'+key+'"' : '';
   var input = type === 'select'
-    ? '<select id="f_'+key+'">'+ (extra||[]).map(function(o){
-        return '<option value="'+esc(o)+'"'+(form[key]===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('') +'</select>'
+    ? '<select id="f_'+key+'"'+aria+'>'+ (extra||[]).map(function(o){
+        return '<option value="'+esc(o)+'"'+(form[key]===o?' selected':'')+'>'+(o?esc(o):'請選擇')+'</option>'; }).join('') +'</select>'
     : type === 'textarea'
-      ? '<textarea id="f_'+key+'" rows="2">'+val+'</textarea>'
-      : '<input id="f_'+key+'" type="'+type+'" value="'+val+'" '+(extra||'')+'>';
+      ? '<textarea id="f_'+key+'" rows="2"'+aria+'>'+val+'</textarea>'
+      : '<input id="f_'+key+'" type="'+type+'" value="'+val+'" '+aria+' '+(extra||'')+'>';
   return '<div class="field'+bad+'"><label for="f_'+key+'">'+label+'</label>'+input+
-         (errs[key] ? '<div class="err">'+esc(errs[key])+'</div>' : '')+'</div>';
+         (errs[key] ? '<div class="err" id="e_'+key+'" role="alert">'+esc(errs[key])+'</div>' : '')+'</div>';
 }
 
 function stepBody(){
@@ -141,7 +142,9 @@ function validate(){
   if (step === 1){
     if (!form.name) errs.name = '請填收件人姓名';
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) errs.email = '請填一個看得懂的 Email';
-    if (!/^09\d{8}$/.test(form.tel.replace(/\D/g,''))) errs.tel = '手機請填 09 開頭的十碼';
+    var tel = form.tel.replace(/\D/g,'');
+    if (!/^09\d{8}$/.test(tel)) errs.tel = '手機請填 09 開頭的十碼';
+    else form.tel = tel;                       // 存乾淨的數字，別把夾雜的文字帶進訂單
   }
   if (step === 2 && form.ship !== 'pickup'){
     if (!form.city) errs.city = '請選縣市';
@@ -156,10 +159,10 @@ function validate(){
 
 function bind(){
   document.querySelectorAll('[data-ship]').forEach(function(b){
-    b.onclick = function(){ grab(); form.ship = b.dataset.ship; render(); };
+    b.onclick = function(){ grab(); form.ship = b.dataset.ship; Store.ship(form.ship); UI.keepFocus(render); };
   });
   document.querySelectorAll('[data-pay]').forEach(function(b){
-    b.onclick = function(){ grab(); form.pay = b.dataset.pay; render(); };
+    b.onclick = function(){ grab(); form.pay = b.dataset.pay; UI.keepFocus(render); };
   });
   var ap = document.getElementById('applyPromo');
   if (ap) ap.onclick = function(){
@@ -186,6 +189,8 @@ function bind(){
   };
 }
 
+Store.ship(form.ship);
+window.addEventListener('wuhou:sync', render);
 render();
 </script>
 </body>

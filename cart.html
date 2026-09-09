@@ -6,7 +6,7 @@
 <title>購物袋 — 物候 WUHOU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/site.css">
 </head>
 <body>
@@ -63,8 +63,8 @@ function render(){
         : '') +
     '</div>' +
 
-    '<aside class="side">' +
-      (t.toFree > 0 && items.length
+    (items.length ? '<aside class="side">' +
+      (t.toFree > 0
         ? '<div class="freebar">再 ' + money(t.toFree) + ' 免運<div class="track"><div class="fill" style="width:' +
           Math.min(100, Math.round((1 - t.toFree / WUHOU.freeShipping) * 100)) + '%"></div></div></div>'
         : items.length ? '<div class="freebar">已符合免運</div>' : '') +
@@ -78,22 +78,24 @@ function render(){
       (items.length
         ? '<a class="btn" href="checkout.html" style="width:100%;margin-top:1.2rem">前往結帳</a>' +
           '<p class="note" style="margin-top:.9rem">不需要註冊會員　·　折價碼在付款那一步輸入</p>'
-        : '<a class="btn btn-ghost" href="shop.html" style="width:100%;margin-top:1.2rem">繼續逛</a>') +
-    '</aside></div>';
+        : '') +
+    '</aside>' : '') + '</div>';
 
   bind();
 }
 
 function bind(){
   var q = function(sel, fn){ document.querySelectorAll(sel).forEach(fn); };
-  q('[data-dec]', function(b){ b.onclick = function(){ var i=+b.dataset.dec; Store.setQty(i, Store.items()[i].qty-1); render(); }; });
-  q('[data-inc]', function(b){ b.onclick = function(){ var i=+b.dataset.inc; Store.setQty(i, Store.items()[i].qty+1); render(); }; });
-  q('[data-rm]',  function(b){ b.onclick = function(){ Store.remove(+b.dataset.rm); render(); }; });
-  q('[data-save]',function(b){ b.onclick = function(){ Store.saveForLater(+b.dataset.save); render(); }; });
-  q('[data-back]',function(b){ b.onclick = function(){ Store.moveToCart(+b.dataset.back); render(); }; });
-  q('[data-drop]',function(b){ b.onclick = function(){ Store.dropSaved(+b.dataset.drop); render(); }; });
+  var redraw = function(){ UI.keepFocus(render); };
+  q('[data-dec]', function(b){ b.onclick = function(){ var i=+b.dataset.dec; Store.setQty(i, Store.items()[i].qty-1); redraw(); }; });
+  q('[data-inc]', function(b){ b.onclick = function(){ var i=+b.dataset.inc; Store.setQty(i, Store.items()[i].qty+1); redraw(); }; });
+  q('[data-rm]',  function(b){ b.onclick = function(){ Store.remove(+b.dataset.rm); redraw(); }; });
+  q('[data-save]',function(b){ b.onclick = function(){ Store.saveForLater(+b.dataset.save); redraw(); }; });
+  q('[data-back]',function(b){ b.onclick = function(){ Store.moveToCart(+b.dataset.back); redraw(); }; });
+  q('[data-drop]',function(b){ b.onclick = function(){ Store.dropSaved(+b.dataset.drop); redraw(); }; });
 }
 
+window.addEventListener('wuhou:sync', render);
 render();
 </script>
 </body>

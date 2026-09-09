@@ -6,7 +6,7 @@
 <title>器物 — 物候 WUHOU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/site.css">
 </head>
 <body>
@@ -131,10 +131,10 @@ function accRow(label, body, open){
 
 function wire(){
   document.querySelectorAll('[data-shot]').forEach(function(b){
-    b.onclick = function(){ shot = +b.dataset.shot; render(); };
+    b.onclick = function(){ shot = +b.dataset.shot; UI.keepFocus(render); };
   });
   document.querySelectorAll('[data-opt]').forEach(function(b){
-    b.onclick = function(){ chosen = p.options[+b.dataset.opt]; qty = 1; render(); };
+    b.onclick = function(){ chosen = p.options[+b.dataset.opt]; qty = 1; UI.keepFocus(render); };
   });
   document.querySelectorAll('[data-acc]').forEach(function(b){
     b.onclick = function(){

@@ -79,6 +79,7 @@ window.WUHOU.findAddon = function (id) {
 // 未選規格時列表頁顯示的起始價
 window.WUHOU.fromPrice = function (p) {
   var ok = p.options.filter(function (o) { return o.stock !== 'na'; });
+  if (!ok.length) return null;                 // 全部規格都不生產時別回 Infinity
   return Math.min.apply(null, ok.map(function (o) { return o.price; }));
 };
 window.WUHOU.hasChoice = function (p) {
