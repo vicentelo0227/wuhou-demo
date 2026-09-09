@@ -21,7 +21,7 @@
         }).join('') +
         '</nav>' +
         '<div style="display:flex;align-items:center;gap:.5rem">' +
-        '<button class="hd-cart" id="cartBtn" aria-label="開啟購物袋">購物袋 <b id="cartN">0</b></button>' +
+        '<button class="hd-cart" id="cartBtn" aria-label="開啟購物車">購物車 <b id="cartN">0</b></button>' +
         '<button class="nav-toggle" id="navBtn" aria-label="選單" aria-expanded="false">≡</button>' +
         '</div>' +
         '</div></header>'), document.body.firstChild);
@@ -34,8 +34,8 @@
 
       document.body.appendChild(el('<div class="scrim" id="scrim"></div>'));
       document.body.appendChild(el(
-        '<aside class="drawer" id="drawer" aria-hidden="true" aria-label="購物袋">' +
-        '<div class="drawer-hd"><h2>購物袋</h2><button class="xclose" id="drawerX" aria-label="關閉">✕</button></div>' +
+        '<aside class="drawer" id="drawer" aria-hidden="true" aria-label="購物車">' +
+        '<div class="drawer-hd"><h2>購物車</h2><button class="xclose" id="drawerX" aria-label="關閉">✕</button></div>' +
         '<div class="drawer-body" id="drawerBody"></div>' +
         '<div class="drawer-ft" id="drawerFt"></div>' +
         '</aside>'));
@@ -113,7 +113,7 @@
       var items = Store.items();
 
       if (!items.length) {
-        body.innerHTML = '<div class="empty"><p>購物袋是空的。</p><a class="btn-ghost btn" href="shop.html">去看看器物</a></div>';
+        body.innerHTML = '<div class="empty"><p>購物車是空的。</p><a class="btn-ghost btn" href="shop.html">去看看器物</a></div>';
         ft.innerHTML = ''; return;
       }
 
@@ -126,7 +126,7 @@
           '<div class="tools2"><button data-dec="' + i + '" aria-label="減少 ' + esc(p.name) + ' 的數量">−</button>' +
           '<span>' + it.qty + '</span>' +
           '<button data-inc="' + i + '" aria-label="增加 ' + esc(p.name) + ' 的數量">＋</button>' +
-          '<button data-rm="' + i + '" aria-label="從購物袋移除 ' + esc(p.name) + '">移除</button></div></div>' +
+          '<button data-rm="' + i + '" aria-label="從購物車移除 ' + esc(p.name) + '">移除</button></div></div>' +
           '<div class="p">' + money(Store.priceOf(it) * it.qty) + '</div></div>';
       }).join('');
 
@@ -160,7 +160,7 @@
         '<div class="sum"><div><span>小計</span><span>' + money(t.subtotal) + '</span></div>' +
         '<div><span>運費</span><span>' + (t.shipping ? money(t.shipping) : '免運') + '</span></div>' +
         '<div class="t"><span>總計</span><span>' + money(t.total) + '</span></div></div>' +
-        '<a class="btn" href="cart.html" style="width:100%;margin-top:1rem">前往購物袋</a>';
+        '<a class="btn" href="cart.html" style="width:100%;margin-top:1rem">前往購物車</a>';
 
       body.querySelectorAll('[data-dec]').forEach(function (b) {
         b.onclick = function () { var i = +b.dataset.dec, it = Store.items()[i]; if (!it) return; Store.setQty(i, it.qty - 1); UI.keepFocus(UI.renderDrawer); };

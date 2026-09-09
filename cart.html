@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>購物袋 — 物候 WUHOU</title>
+<title>購物車 — 物候 WUHOU</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%2316110d%22/%3E%3Ccircle cx=%2216%22 cy=%2218%22 r=%228%22 fill=%22none%22 stroke=%22%23c79a63%22 stroke-width=%221.5%22/%3E%3Cpath d=%22M11 10h10%22 stroke=%22%23c79a63%22 stroke-width=%221.5%22/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/site.css?v=202609091626">
+<link rel="stylesheet" href="css/site.css?v=202609092157">
 </head>
 <body>
 
 <main class="wrap band">
-  <div class="band-hd"><h2>購物袋</h2><span class="side" id="n"></span></div>
+  <div class="band-hd"><h2>購物車</h2><span class="side" id="n"></span></div>
   <div id="body"></div>
 </main>
 
-<script src="js/data.js?v=202609091626"></script>
-<script src="js/store.js?v=202609091626"></script>
-<script src="js/ui.js?v=202609091626"></script>
+<script src="js/data.js?v=202609092157"></script>
+<script src="js/store.js?v=202609092157"></script>
+<script src="js/ui.js?v=202609092157"></script>
 <script>
 UI.mount('cart.html');
 
@@ -32,7 +32,7 @@ function lineHTML(it, i, saved){
       (it.opt ? '<div class="o">' + esc(it.opt) + '</div>' : '') +
       '<div class="tools2">' +
         (saved
-          ? '<button data-back="' + i + '">移回購物袋</button><button data-drop="' + i + '">刪除</button>'
+          ? '<button data-back="' + i + '">移回購物車</button><button data-drop="' + i + '">刪除</button>'
           : '<button data-dec="' + i + '" aria-label="減少">−</button><span>' + it.qty + '</span>' +
             '<button data-inc="' + i + '" aria-label="增加">＋</button>' +
             '<button data-save="' + i + '">留著以後買</button><button data-rm="' + i + '">移除</button>') +
@@ -46,7 +46,7 @@ function render(){
 
   if (!items.length && !saved.length){
     document.getElementById('body').innerHTML =
-      '<div class="empty"><p class="prose" style="margin-inline:auto">購物袋是空的。本季還有六件器物在架上。</p>' +
+      '<div class="empty"><p class="prose" style="margin-inline:auto">購物車是空的。本季還有六件器物在架上。</p>' +
       '<a class="btn" href="shop.html">去看看</a></div>';
     return;
   }
@@ -56,7 +56,7 @@ function render(){
   document.getElementById('body').innerHTML =
     '<div class="two"><div>' +
       (items.length ? items.map(function(it,i){ return lineHTML(it,i,false); }).join('')
-                    : '<p class="prose">購物袋裡沒有東西了。</p>') +
+                    : '<p class="prose">購物車裡沒有東西了。</p>') +
       (saved.length
         ? '<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--line)">' +
           '<div style="font-size:.85rem;color:var(--faint);letter-spacing:.1em;margin-bottom:.6rem">留著以後買（' + saved.length + '）</div>' +
