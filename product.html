@@ -7,7 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%2316110d%22/%3E%3Ccircle cx=%2216%22 cy=%2218%22 r=%228%22 fill=%22none%22 stroke=%22%23c79a63%22 stroke-width=%221.5%22/%3E%3Cpath d=%22M11 10h10%22 stroke=%22%23c79a63%22 stroke-width=%221.5%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/site.css?v=202609091626">
 </head>
 <body>
 
@@ -18,14 +19,22 @@
   <button class="btn" id="stickyBtn">加入購物袋</button>
 </div>
 
-<script src="js/data.js"></script>
-<script src="js/store.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/data.js?v=202609091626"></script>
+<script src="js/store.js?v=202609091626"></script>
+<script src="js/ui.js?v=202609091626"></script>
 <script>
+(function(){
 UI.mount('shop.html');
 
 var id = new URLSearchParams(location.search).get('id');
-var p = WUHOU.find(id) || WUHOU.products[0];
+var p = WUHOU.find(id);
+if (!p) {                                   // 網址帶了不存在的編號就講清楚，別默默換一件給人看
+  document.getElementById('main').innerHTML =
+    '<div class="empty"><p class="prose" style="margin-inline:auto">找不到這件器物，可能是這一季已經下架了。</p>' +
+    '<a class="btn" href="shop.html">看看本季有什麼</a></div>';
+  document.title = '找不到這件器物 — 物候 WUHOU';
+  return;
+}
 var chosen = null;          // 不預選，強迫使用者主動選（Apple 的做法）
 var qty = 1;
 var shot = 0;
@@ -146,7 +155,10 @@ function wire(){
   });
   var qd = document.getElementById('qd'), qi = document.getElementById('qi');
   if (qd) qd.onclick = function(){ qty = Math.max(1, qty-1); document.getElementById('qv').textContent = qty; };
-  if (qi) qi.onclick = function(){ qty = Math.min(9, qty+1); document.getElementById('qv').textContent = qty; };
+  if (qi) qi.onclick = function(){
+    if (qty >= 9) { UI.toast('一次最多 9 件，要更多請直接跟我們說'); return; }
+    qty += 1; document.getElementById('qv').textContent = qty;
+  };
   var add = document.getElementById('addBtn');
   if (add) add.onclick = doAdd;
   var nf = document.getElementById('notify');
@@ -169,6 +181,7 @@ function syncSticky(buyable, o){
 }
 
 render();
+})();
 </script>
 </body>
 </html>

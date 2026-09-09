@@ -163,10 +163,12 @@
         '<a class="btn" href="cart.html" style="width:100%;margin-top:1rem">前往購物袋</a>';
 
       body.querySelectorAll('[data-dec]').forEach(function (b) {
-        b.onclick = function () { var i = +b.dataset.dec; Store.setQty(i, Store.items()[i].qty - 1); UI.keepFocus(UI.renderDrawer); };
+        b.onclick = function () { var i = +b.dataset.dec, it = Store.items()[i]; if (!it) return; Store.setQty(i, it.qty - 1); UI.keepFocus(UI.renderDrawer); };
       });
       body.querySelectorAll('[data-inc]').forEach(function (b) {
-        b.onclick = function () { var i = +b.dataset.inc; Store.setQty(i, Store.items()[i].qty + 1); UI.keepFocus(UI.renderDrawer); };
+        b.onclick = function () { var i = +b.dataset.inc, it = Store.items()[i]; if (!it) return;
+          if (it.qty >= 9) { UI.toast('一次最多 9 件，要更多請直接跟我們說'); return; }
+          Store.setQty(i, it.qty + 1); UI.keepFocus(UI.renderDrawer); };
       });
       body.querySelectorAll('[data-rm]').forEach(function (b) {
         b.onclick = function () { Store.remove(+b.dataset.rm); UI.renderDrawer(); };
