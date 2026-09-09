@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>結帳 — 物候 WUHOU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<main class="wrap band">
+  <div class="band-hd"><h2>結帳</h2><a class="side link-u" href="cart.html">回購物袋</a></div>
+  <div id="body"></div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+UI.mount('cart.html');
+
+var step = 1;
+var form = { name:'', email:'', tel:'', ship:'home', city:'', addr:'', memo:'', pay:'cod', invoice:'donate', news:false };
+var errs = {};
+
+var CITIES = ['臺北市','新北市','桃園市','臺中市','臺南市','高雄市','基隆市','新竹市','新竹縣','宜蘭縣','其他'];
+
+function steps(){
+  return '<div class="steps">' +
+    ['你的資料','配送','付款'].map(function(l,i){
+      var n = i+1, cls = n===step ? 'now' : (n<step ? 'done' : '');
+      return '<span class="'+cls+'"><b>'+n+'</b>　'+l+'</span>';
+    }).join('') + '</div>';
+}
+
+function field(key, label, type, extra){
+  var bad = errs[key] ? ' bad' : '';
+  var val = esc(form[key] || '');
+  var input = type === 'select'
+    ? '<select id="f_'+key+'">'+ (extra||[]).map(function(o){
+        return '<option value="'+esc(o)+'"'+(form[key]===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('') +'</select>'
+    : type === 'textarea'
+      ? '<textarea id="f_'+key+'" rows="2">'+val+'</textarea>'
+      : '<input id="f_'+key+'" type="'+type+'" value="'+val+'" '+(extra||'')+'>';
+  return '<div class="field'+bad+'"><label for="f_'+key+'">'+label+'</label>'+input+
+         (errs[key] ? '<div class="err">'+esc(errs[key])+'</div>' : '')+'</div>';
+}
+
+function stepBody(){
+  if (step === 1) return '' +
+    field('name','收件人姓名','text','autocomplete="name"') +
+    '<div class="row2">' +
+      field('email','Email　（訂單通知寄到這裡）','email','autocomplete="email"') +
+      field('tel','手機','tel','autocomplete="tel"') +
+    '</div>' +
+    '<label class="check"><input type="checkbox" id="f_news"'+(form.news?' checked':'')+'>' +
+      '<span>下次開窯時通知我。不會有別的信。</span></label>' +
+    '<p class="note">不需要註冊會員就能完成訂單。</p>';
+
+  if (step === 2) return '' +
+    '<div class="field"><label>配送方式</label><div class="opt-list">' +
+      [['home','宅配到府　'+money(WUHOU.shippingFee)+'　滿'+money(WUHOU.freeShipping)+'免運'],
+       ['store','超商取貨　'+money(60)],
+       ['pickup','來店自取　免費']].map(function(o){
+        return '<button class="opt" data-ship="'+o[0]+'" aria-pressed="'+(form.ship===o[0])+'">'+o[1]+'</button>';
+      }).join('') + '</div></div>' +
+    (form.ship === 'pickup'
+      ? '<p class="note" style="margin-bottom:1.2rem">迪化街一段　週三至週日 12:00–19:00。備好會傳訊息給你。</p>'
+      : '<div class="row2">' + field('city','縣市','select',CITIES) + field('memo','外送備註（選填）','text') + '</div>' +
+        field('addr','地址','text','autocomplete="street-address"')) +
+    '<p class="note">陶器用紙漿墊包兩層，破損我們負責。</p>';
+
+  return '' +
+    '<div class="field"><label>付款方式</label><div class="opt-list">' +
+      [['cod','貨到付款'],['bank','ATM 轉帳'],['card','信用卡']].map(function(o){
+        return '<button class="opt" data-pay="'+o[0]+'" aria-pressed="'+(form.pay===o[0])+'">'+o[1]+'</button>';
+      }).join('') + '</div></div>' +
+    (form.pay === 'card'
+      ? '<div class="gate" style="margin-top:0;margin-bottom:1.2rem">這是示範網站，不收也不傳送任何付款資訊。<br>' +
+        '真實專案這裡會嵌入金流商（綠界／藍新／Stripe）提供的安全欄位，卡號不會經過我們自己的網站。</div>'
+      : form.pay === 'bank'
+        ? '<p class="note" style="margin-bottom:1.2rem">下單後會給你末五碼與帳號，三天內轉帳即可。</p>'
+        : '<p class="note" style="margin-bottom:1.2rem">收到貨再付，現金或行動支付都可以。</p>') +
+    field('invoice','發票','select',['捐贈發票','手機條碼','統一編號']) +
+    '<div class="field"><label for="f_promo">折價碼</label>' +
+      '<div style="display:flex;gap:.6rem"><input id="f_promo" type="text" placeholder="例如 AUTUMN" style="flex-grow:1">' +
+      '<button class="btn btn-ghost" id="applyPromo" style="min-height:48px;padding-inline:1.2rem">套用</button></div>' +
+      (Store.promo() ? '<div class="err" style="color:var(--gold)">已套用 '+esc(Store.promo())+'，全單九折</div>' : '') +
+    '</div>' +
+    '<label class="check"><input type="checkbox" id="f_agree"><span>我知道這是示範網站，送出不會產生真實訂單、也不會扣款。</span></label>';
+}
+
+function render(){
+  var items = Store.items();
+  if (!items.length){
+    document.getElementById('body').innerHTML =
+      '<div class="empty"><p class="prose" style="margin-inline:auto">購物袋是空的，沒有東西可以結帳。</p><a class="btn" href="shop.html">去看看器物</a></div>';
+    return;
+  }
+  var t = Store.totals(Store.promo());
+
+  document.getElementById('body').innerHTML =
+    '<div class="two"><div>' + steps() + stepBody() +
+      '<div style="display:flex;gap:.8rem;margin-top:1.8rem;flex-wrap:wrap">' +
+        (step > 1 ? '<button class="btn btn-ghost" id="back">上一步</button>' : '') +
+        '<button class="btn" id="next" style="flex-grow:1">' + (step < 3 ? '繼續' : '送出訂單') + '</button>' +
+      '</div>' +
+    '</div>' +
+
+    '<aside class="side">' +
+      '<div style="font-size:.85rem;letter-spacing:.1em;margin-bottom:.9rem">訂單內容</div>' +
+      items.map(function(it){
+        var p = it.type==='addon' ? WUHOU.findAddon(it.id) : WUHOU.find(it.id);
+        return '<div style="display:flex;justify-content:space-between;gap:1rem;padding-block:.45rem;font-size:.85rem;color:var(--muted)">' +
+          '<span>' + esc(p.name) + (it.opt ? '　' + esc(it.opt) : '') + '　×' + it.qty + '</span>' +
+          '<span class="latin">' + money(Store.priceOf(it)*it.qty) + '</span></div>';
+      }).join('') +
+      '<div class="sum" style="margin-top:.8rem;border-top:1px solid var(--line);padding-top:.8rem">' +
+        '<div><span>小計</span><span>' + money(t.subtotal) + '</span></div>' +
+        (t.discount ? '<div><span>折扣</span><span>−' + money(t.discount) + '</span></div>' : '') +
+        '<div><span>運費</span><span>' + (t.shipping ? money(t.shipping) : '免運') + '</span></div>' +
+        '<div class="t"><span>總計</span><span>' + money(t.total) + '</span></div>' +
+      '</div>' +
+    '</aside></div>';
+
+  bind();
+}
+
+function grab(){
+  ['name','email','tel','city','addr','memo','invoice'].forEach(function(k){
+    var e = document.getElementById('f_'+k); if (e) form[k] = e.value.trim();
+  });
+  var n = document.getElementById('f_news'); if (n) form.news = n.checked;
+}
+
+function validate(){
+  errs = {};
+  if (step === 1){
+    if (!form.name) errs.name = '請填收件人姓名';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) errs.email = '請填一個看得懂的 Email';
+    if (!/^09\d{8}$/.test(form.tel.replace(/\D/g,''))) errs.tel = '手機請填 09 開頭的十碼';
+  }
+  if (step === 2 && form.ship !== 'pickup'){
+    if (!form.city) errs.city = '請選縣市';
+    if (!form.addr || form.addr.length < 5) errs.addr = '地址寫詳細一點，才送得到';
+  }
+  if (step === 3){
+    var a = document.getElementById('f_agree');
+    if (a && !a.checked) errs.agree = 'x';
+  }
+  return Object.keys(errs).length === 0;
+}
+
+function bind(){
+  document.querySelectorAll('[data-ship]').forEach(function(b){
+    b.onclick = function(){ grab(); form.ship = b.dataset.ship; render(); };
+  });
+  document.querySelectorAll('[data-pay]').forEach(function(b){
+    b.onclick = function(){ grab(); form.pay = b.dataset.pay; render(); };
+  });
+  var ap = document.getElementById('applyPromo');
+  if (ap) ap.onclick = function(){
+    var v = (document.getElementById('f_promo').value || '').trim().toUpperCase();
+    if (!v) return;
+    if (v === 'AUTUMN'){ Store.promo('AUTUMN'); UI.toast('折價碼已套用'); }
+    else UI.toast('這個折價碼不存在（試試 AUTUMN）');
+    grab(); render();
+  };
+  var b1 = document.getElementById('back');
+  if (b1) b1.onclick = function(){ grab(); step--; errs = {}; render(); window.scrollTo(0,0); };
+  document.getElementById('next').onclick = function(){
+    grab();
+    if (!validate()){
+      if (errs.agree) UI.toast('請勾選最後那一項再送出');
+      render();
+      var bad = document.querySelector('.field.bad input, .field.bad select');
+      if (bad) bad.focus();
+      return;
+    }
+    if (step < 3){ step++; render(); window.scrollTo(0,0); return; }
+    var order = Store.placeOrder(form);
+    location.href = 'done.html';
+  };
+}
+
+render();
+</script>
+</body>
+</html>

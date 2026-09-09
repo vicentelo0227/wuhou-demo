@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>購物袋 — 物候 WUHOU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<main class="wrap band">
+  <div class="band-hd"><h2>購物袋</h2><span class="side" id="n"></span></div>
+  <div id="body"></div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+UI.mount('cart.html');
+
+function lineHTML(it, i, saved){
+  var p = it.type === 'addon' ? WUHOU.findAddon(it.id) : WUHOU.find(it.id);
+  var link = it.type === 'addon' ? null : 'product.html?id=' + p.id;
+  return '<div class="line">' +
+    '<img src="img/' + p.img + '" alt="' + esc(p.name) + '" width="900" height="900">' +
+    '<div><div class="n">' + (link ? '<a href="' + link + '" class="link-u" style="border:0">' + esc(p.name) + '</a>' : esc(p.name)) + '</div>' +
+      (it.opt ? '<div class="o">' + esc(it.opt) + '</div>' : '') +
+      '<div class="tools2">' +
+        (saved
+          ? '<button data-back="' + i + '">移回購物袋</button><button data-drop="' + i + '">刪除</button>'
+          : '<button data-dec="' + i + '" aria-label="減少">−</button><span>' + it.qty + '</span>' +
+            '<button data-inc="' + i + '" aria-label="增加">＋</button>' +
+            '<button data-save="' + i + '">留著以後買</button><button data-rm="' + i + '">移除</button>') +
+      '</div></div>' +
+    '<div class="p">' + money(Store.priceOf(it) * it.qty) + '</div></div>';
+}
+
+function render(){
+  var items = Store.items(), saved = Store.saved();
+  document.getElementById('n').textContent = items.length ? items.length + ' 項' : '';
+
+  if (!items.length && !saved.length){
+    document.getElementById('body').innerHTML =
+      '<div class="empty"><p class="prose" style="margin-inline:auto">購物袋是空的。本季還有六件器物在架上。</p>' +
+      '<a class="btn" href="shop.html">去看看</a></div>';
+    return;
+  }
+
+  var t = Store.totals(Store.promo());
+
+  document.getElementById('body').innerHTML =
+    '<div class="two"><div>' +
+      (items.length ? items.map(function(it,i){ return lineHTML(it,i,false); }).join('')
+                    : '<p class="prose">購物袋裡沒有東西了。</p>') +
+      (saved.length
+        ? '<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--line)">' +
+          '<div style="font-size:.85rem;color:var(--faint);letter-spacing:.1em;margin-bottom:.6rem">留著以後買（' + saved.length + '）</div>' +
+          saved.map(function(it,i){ return lineHTML(it,i,true); }).join('') + '</div>'
+        : '') +
+    '</div>' +
+
+    '<aside class="side">' +
+      (t.toFree > 0 && items.length
+        ? '<div class="freebar">再 ' + money(t.toFree) + ' 免運<div class="track"><div class="fill" style="width:' +
+          Math.min(100, Math.round((1 - t.toFree / WUHOU.freeShipping) * 100)) + '%"></div></div></div>'
+        : items.length ? '<div class="freebar">已符合免運</div>' : '') +
+      '<div class="sum">' +
+        '<div><span>小計</span><span>' + money(t.subtotal) + '</span></div>' +
+        (t.discount ? '<div><span>折扣</span><span>−' + money(t.discount) + '</span></div>' : '') +
+        '<div><span>運費</span><span>' + (t.shipping ? money(t.shipping) : '免運') + '</span></div>' +
+        '<div><span>稅金</span><span style="color:var(--faint)">已含</span></div>' +
+        '<div class="t"><span>總計</span><span>' + money(t.total) + '</span></div>' +
+      '</div>' +
+      (items.length
+        ? '<a class="btn" href="checkout.html" style="width:100%;margin-top:1.2rem">前往結帳</a>' +
+          '<p class="note" style="margin-top:.9rem">不需要註冊會員　·　折價碼在付款那一步輸入</p>'
+        : '<a class="btn btn-ghost" href="shop.html" style="width:100%;margin-top:1.2rem">繼續逛</a>') +
+    '</aside></div>';
+
+  bind();
+}
+
+function bind(){
+  var q = function(sel, fn){ document.querySelectorAll(sel).forEach(fn); };
+  q('[data-dec]', function(b){ b.onclick = function(){ var i=+b.dataset.dec; Store.setQty(i, Store.items()[i].qty-1); render(); }; });
+  q('[data-inc]', function(b){ b.onclick = function(){ var i=+b.dataset.inc; Store.setQty(i, Store.items()[i].qty+1); render(); }; });
+  q('[data-rm]',  function(b){ b.onclick = function(){ Store.remove(+b.dataset.rm); render(); }; });
+  q('[data-save]',function(b){ b.onclick = function(){ Store.saveForLater(+b.dataset.save); render(); }; });
+  q('[data-back]',function(b){ b.onclick = function(){ Store.moveToCart(+b.dataset.back); render(); }; });
+  q('[data-drop]',function(b){ b.onclick = function(){ Store.dropSaved(+b.dataset.drop); render(); }; });
+}
+
+render();
+</script>
+</body>
+</html>

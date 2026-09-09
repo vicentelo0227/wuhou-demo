@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>器物 — 物候 WUHOU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<main class="wrap band" id="main" style="padding-top:1.5rem"></main>
+
+<div class="stickybuy" id="sticky">
+  <span class="p" id="stickyP"></span>
+  <button class="btn" id="stickyBtn">加入購物袋</button>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+UI.mount('shop.html');
+
+var id = new URLSearchParams(location.search).get('id');
+var p = WUHOU.find(id) || WUHOU.products[0];
+var chosen = null;          // 不預選，強迫使用者主動選（Apple 的做法）
+var qty = 1;
+var shot = 0;
+var multi = p.options.length > 1;
+
+function opt(){ return multi ? chosen : p.options[0]; }
+
+function priceLine(){
+  var o = opt();
+  if (o) return money(o.price);
+  return money(WUHOU.fromPrice(p)) + '<span class="from">起</span>';
+}
+
+function titleOf(){
+  var o = opt();
+  return p.name + (o && o.v ? ' ' + o.v : '') + ' — 物候 WUHOU';
+}
+
+function render(){
+  document.title = titleOf();   // 分頁標題跟著規格走，方便開多分頁比較
+
+  var o = opt();
+  var buyable = o && o.stock === 'in';
+
+  document.getElementById('main').innerHTML =
+    '<p style="font-size:.78rem;color:var(--faint);margin:0 0 1.2rem">' +
+      '<a href="shop.html" class="link-u">器物</a>　／　' + esc(p.kind) +
+      (p.kiln ? '　／　窯號 ' + p.kiln : '') + '</p>' +
+
+    '<div class="pdp">' +
+      '<div class="pdp-media">' +
+        '<div class="pdp-main"><img id="mainImg" src="img/' + p.gallery[shot] + '" alt="' + esc(p.name) + '" width="900" height="900"></div>' +
+        '<div class="pdp-thumbs">' + p.gallery.map(function(g,i){
+          return '<button data-shot="' + i + '" aria-current="' + (i===shot) + '" aria-label="第 ' + (i+1) + ' 張">' +
+                 '<img src="img/' + g + '" alt="" width="800" height="800"></button>';
+        }).join('') + '</div>' +
+      '</div>' +
+
+      '<div>' +
+        '<p class="eyebrow" style="margin:0">' + (p.kiln ? 'FIRING ' + p.kiln : 'TEXTILE') + '</p>' +
+        '<h1>' + esc(p.name) + '</h1>' +
+        '<p class="pdp-price" id="priceLine">' + priceLine() + '</p>' +
+        '<p class="prose" style="margin-top:1.4rem">' + esc(p.blurb) + '</p>' +
+
+        (multi ? optionBlock() : '') +
+        buyRow(buyable, o) +
+
+        '<div class="acc">' +
+          accRow('材質與尺寸', specHTML(), true) +
+          accRow('保養方式', '手洗為宜，避免驟冷驟熱。陶器久用會留下使用痕跡，那不是損壞。', false) +
+          accRow('配送與退換', '滿 ' + money(WUHOU.freeShipping) + ' 免運，未滿收 ' + money(WUHOU.shippingFee) + '。<br>七天內可退，破損由我們負擔運費。', false) +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<section class="band"><div class="band-hd"><h2>同一窯出來的</h2></div>' +
+      '<div class="grid">' + WUHOU.products.filter(function(x){ return x.id !== p.id; }).slice(0,3).map(UI.card).join('') + '</div>' +
+    '</section>';
+
+  wire();
+  syncSticky(buyable, o);
+}
+
+function optionBlock(){
+  return '<div class="opt-group">' +
+    '<div class="opt-label"><span>' + esc(p.optionName) + '</span>' +
+      (chosen ? '' : '<span style="color:var(--gold)">請先選擇</span>') + '</div>' +
+    '<div class="opt-list">' + p.options.map(function(o,i){
+      var cls = 'opt' + (o.stock==='soon'?' soon':'') + (o.stock==='na'?' na':'');
+      return '<button class="' + cls + '" data-opt="' + i + '" aria-pressed="' + (chosen===o) + '">' + esc(o.v) + '</button>';
+    }).join('') + '</div>' +
+    (chosen && chosen.note
+      ? '<p class="opt-note">' + esc(chosen.note) + '</p>'
+      : '<p class="opt-note" style="color:var(--faint)">' +
+          (p.options.some(function(o){return o.stock!=='in';}) ? '部分規格目前無法購買，選了會告訴你原因。' : '') + '</p>') +
+  '</div>';
+}
+
+// 選完之前不渲染購買按鈕（不是變灰，是不存在）—— Apple 下單頁的做法
+function buyRow(buyable, o){
+  if (multi && !chosen) return '<div class="gate">選好' + esc(p.optionName) + '之後，這裡會出現購買選項。</div>';
+  if (o && o.stock === 'soon')
+    return '<div class="buy"><button class="btn btn-ghost" id="notify" style="flex-grow:1">貨到通知我</button></div>' +
+           '<p class="buy-hint">這個規格暫時沒有，之後還會做。</p>';
+  if (o && o.stock === 'na')
+    return '<div class="gate" style="border-color:var(--warn);color:var(--warn)">這個規格我們沒有生產，換一個看看。</div>';
+  return '<div class="buy">' +
+      '<div class="qty"><button id="qd" aria-label="減少">−</button><span id="qv">' + qty + '</span><button id="qi" aria-label="增加">＋</button></div>' +
+      '<button class="btn" id="addBtn">加入購物袋</button>' +
+    '</div>' +
+    '<p class="buy-hint">現貨　·　兩個工作天內出貨' + (o && o.last ? '　·　僅餘一件' : '') + '</p>';
+}
+
+function specHTML(){
+  return '<dl class="spec">' + Object.keys(p.spec).map(function(k){
+    return '<dt>' + esc(k) + '</dt><dd>' + esc(p.spec[k]) + '</dd>';
+  }).join('') + '</dl>';
+}
+function accRow(label, body, open){
+  return '<button class="acc-row" data-acc aria-expanded="' + !!open + '">' + label + '<span class="pm">' + (open?'−':'＋') + '</span></button>' +
+         '<div class="acc-body' + (open?'':' hide') + '">' + body + '</div>';
+}
+
+function wire(){
+  document.querySelectorAll('[data-shot]').forEach(function(b){
+    b.onclick = function(){ shot = +b.dataset.shot; render(); };
+  });
+  document.querySelectorAll('[data-opt]').forEach(function(b){
+    b.onclick = function(){ chosen = p.options[+b.dataset.opt]; qty = 1; render(); };
+  });
+  document.querySelectorAll('[data-acc]').forEach(function(b){
+    b.onclick = function(){
+      var open = b.getAttribute('aria-expanded') === 'true';
+      b.setAttribute('aria-expanded', String(!open));
+      b.querySelector('.pm').textContent = open ? '＋' : '−';
+      b.nextElementSibling.classList.toggle('hide', open);
+    };
+  });
+  var qd = document.getElementById('qd'), qi = document.getElementById('qi');
+  if (qd) qd.onclick = function(){ qty = Math.max(1, qty-1); document.getElementById('qv').textContent = qty; };
+  if (qi) qi.onclick = function(){ qty = Math.min(9, qty+1); document.getElementById('qv').textContent = qty; };
+  var add = document.getElementById('addBtn');
+  if (add) add.onclick = doAdd;
+  var nf = document.getElementById('notify');
+  if (nf) nf.onclick = function(){ UI.toast('好，這批回來時通知你'); };
+}
+
+function doAdd(){
+  var o = opt();
+  var it = Store.add('product', p.id, o && o.v ? o.v : null, qty);
+  UI.openDrawer(it);
+  UI.toast('已放進購物袋');
+}
+
+function syncSticky(buyable, o){
+  var bar = document.getElementById('sticky');
+  bar.classList.toggle('on', !!buyable);
+  if (!buyable) return;
+  document.getElementById('stickyP').textContent = money(o.price);
+  document.getElementById('stickyBtn').onclick = doAdd;
+}
+
+render();
+</script>
+</body>
+</html>

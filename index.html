@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>物候 WUHOU — 器物選物</title>
+<meta name="description" content="示範用的線上器物選物店。柴燒陶器、玻璃與織品，一季一批。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<main>
+  <!-- 開場：不是商品格，先給一件東西和一段故事 -->
+  <section class="wrap band" style="padding-top:clamp(2.5rem,6vw,4.5rem)">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2rem,5vw,4.5rem);align-items:center" class="hero-2">
+      <a href="product.html?id=bottle" style="display:block;background:var(--raise);aspect-ratio:1;overflow:hidden">
+        <img src="img/bottle.jpg" alt="黑釉曲頸瓶" width="900" height="900" style="width:100%;height:100%;object-fit:cover">
+      </a>
+      <div>
+        <p class="eyebrow" style="margin:0">AUTUMN FIRING No.14</p>
+        <h1 class="lead" style="margin-top:1.3rem">柴燒到第三天<br>顏色才開始出現</h1>
+        <p class="prose" style="margin-top:1.5rem">
+          這一窯燒了 72 小時。落灰在坯體上結成釉，沒有人能預先知道會停在哪個顏色。
+          出窯的八只曲頸瓶，每一只歪的方向都不一樣。
+        </p>
+        <p style="margin-top:2rem">
+          <a class="link-u latin" href="product.html?id=bottle" style="font-size:1rem;letter-spacing:.18em;color:var(--gold)">SEE THE PIECE</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 本季器皿 -->
+  <section class="wrap band">
+    <div class="band-hd">
+      <h2>本季器皿</h2>
+      <a class="side link-u" href="shop.html">全部 6 件</a>
+    </div>
+    <div class="grid" id="featured"></div>
+  </section>
+
+  <!-- 窯誌 -->
+  <section class="wrap band" id="story">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(2rem,5vw,4rem);align-items:center" class="hero-2">
+      <div>
+        <h2 class="lead" style="font-size:clamp(1.4rem,1rem+1.6vw,1.9rem)">土是南投來的，<br>水是這裡的</h2>
+        <p class="prose" style="margin-top:1.3rem">
+          我們試過幾種外地的土，最後還是回到最初那一批。不是因為它最好，
+          是因為我們最懂它會怎麼裂。
+        </p>
+        <p class="prose" style="margin-top:1rem">
+          一季只開兩次窯，賣完就等下一季。這裡不會有補貨通知，因為下一批不會長得一樣。
+        </p>
+      </div>
+      <img src="img/hands.jpg" alt="陶藝師在轆轤上拉坯" width="800" height="800" style="background:var(--raise)">
+    </div>
+  </section>
+</main>
+
+<style>
+@media (max-width:56rem){ .hero-2{grid-template-columns:1fr!important} }
+</style>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+UI.mount('index.html');
+document.getElementById('featured').innerHTML =
+  WUHOU.products.slice(0, 3).map(UI.card).join('');
+</script>
+</body>
+</html>

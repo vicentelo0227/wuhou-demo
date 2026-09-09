@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>訂單完成 — 物候 WUHOU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<main class="wrap band" id="body"></main>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+UI.mount('index.html');
+
+var o = Store.lastOrder();
+var body = document.getElementById('body');
+
+if (!o){
+  body.innerHTML = '<div class="empty"><p class="prose" style="margin-inline:auto">這裡還沒有訂單。</p><a class="btn" href="shop.html">去看看器物</a></div>';
+} else {
+  var SHIP = { home:'宅配到府', store:'超商取貨', pickup:'來店自取' };
+  var PAY  = { cod:'貨到付款', bank:'ATM 轉帳', card:'信用卡' };
+  body.innerHTML =
+    '<p class="eyebrow" style="margin:0">ORDER ' + esc(o.no) + '</p>' +
+    '<h1 class="lead" style="margin-top:1.1rem">收到了。<br>這批會在兩個工作天內出窯房。</h1>' +
+    '<p class="prose" style="margin-top:1.4rem">' +
+      '出貨後會寄一封信到 ' + esc(o.form.email) + '，裡面有物流單號。' +
+      (o.form.pay === 'bank' ? '轉帳資訊也在同一封信裡。' : '') +
+    '</p>' +
+
+    '<div class="two" style="margin-top:3rem">' +
+      '<div>' +
+        '<div class="band-hd"><h2>訂單內容</h2><span class="side latin">' + esc(o.no) + '</span></div>' +
+        o.items.map(function(it){
+          return '<div style="display:flex;justify-content:space-between;gap:1rem;padding-block:.7rem;border-bottom:1px solid var(--line);font-size:.9rem">' +
+            '<span>' + esc(it.name) + (it.opt ? '　' + esc(it.opt) : '') + '　×' + it.qty + '</span>' +
+            '<span class="latin" style="color:var(--muted)">' + money(it.price * it.qty) + '</span></div>';
+        }).join('') +
+        '<div class="sum" style="margin-top:1rem">' +
+          '<div><span>小計</span><span>' + money(o.totals.subtotal) + '</span></div>' +
+          (o.totals.discount ? '<div><span>折扣</span><span>−' + money(o.totals.discount) + '</span></div>' : '') +
+          '<div><span>運費</span><span>' + (o.totals.shipping ? money(o.totals.shipping) : '免運') + '</span></div>' +
+          '<div class="t"><span>實付</span><span>' + money(o.totals.total) + '</span></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<aside class="side">' +
+        '<div style="font-size:.85rem;letter-spacing:.1em;margin-bottom:1rem">配送與付款</div>' +
+        '<dl class="spec" style="font-size:.85rem">' +
+          '<dt>收件人</dt><dd>' + esc(o.form.name) + '</dd>' +
+          '<dt>電話</dt><dd>' + esc(o.form.tel) + '</dd>' +
+          '<dt>方式</dt><dd>' + (SHIP[o.form.ship] || '') + '</dd>' +
+          (o.form.ship !== 'pickup'
+            ? '<dt>地址</dt><dd>' + esc(o.form.city) + esc(o.form.addr) + '</dd>'
+            : '<dt>地點</dt><dd>迪化街一段　週三至週日</dd>') +
+          '<dt>付款</dt><dd>' + (PAY[o.form.pay] || '') + '</dd>' +
+          '<dt>發票</dt><dd>' + esc(o.form.invoice || '捐贈發票') + '</dd>' +
+        '</dl>' +
+        '<p class="note" style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line)">' +
+          '這是示範網站。沒有真的訂單、沒有扣款，也沒有任何資料被送到伺服器——' +
+          '上面這些只存在你自己的瀏覽器裡。</p>' +
+        '<button class="btn btn-ghost" id="reset" style="width:100%;margin-top:1rem">清掉紀錄，重新試一次</button>' +
+      '</aside>' +
+    '</div>';
+
+  document.getElementById('reset').onclick = function(){
+    Store.reset();
+    location.href = 'index.html';
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>器物 — 物候 WUHOU</title>
+<meta name="description" content="本季全部器物：壺、杯、花器與織物。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<main class="wrap band">
+  <div class="band-hd">
+    <h2>本季器物</h2>
+    <span class="side" id="count"></span>
+  </div>
+
+  <!-- 商品少，篩選收成一顆按鈕（精品站的做法），排序獨立 -->
+  <div class="tools">
+    <button class="filter-btn" id="filterBtn" aria-expanded="false" aria-controls="panel">
+      篩選 <span class="n" id="fn"></span>
+    </button>
+    <label style="display:flex;align-items:center;gap:.6rem;font-size:.82rem;color:var(--faint)">
+      排序
+      <select class="sortsel" id="sort">
+        <option value="season">本季順序</option>
+        <option value="asc">價格低到高</option>
+        <option value="desc">價格高到低</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="panel hide" id="panel">
+    <div>
+      <h3>分類</h3>
+      <div class="chips" id="fKind"></div>
+    </div>
+    <div>
+      <h3>價格</h3>
+      <div class="chips" id="fPrice"></div>
+    </div>
+    <div>
+      <h3>供應</h3>
+      <div class="chips" id="fStock"></div>
+    </div>
+    <div style="align-self:end">
+      <button class="link-u" id="clearF" style="font-size:.82rem;color:var(--faint)">清除全部</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <p class="empty hide" id="none"><span class="prose">沒有符合的器物。<button class="link-u" id="clearF2">清除篩選</button></span></p>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+UI.mount('shop.html');
+
+var F = { kind: [], price: [], stock: [] };
+var KINDS = ['壺','杯','花器','織物'];
+var PRICES = [{k:'u1000',l:'1,000 以下'},{k:'1to3',l:'1,000–3,000'},{k:'o3000',l:'3,000 以上'}];
+var STOCKS = [{k:'in',l:'現貨'},{k:'last',l:'僅餘一件'}];
+
+function chips(host, list, group){
+  document.getElementById(host).innerHTML = list.map(function(o){
+    var k = o.k || o, l = o.l || o;
+    return '<button class="chip" data-g="'+group+'" data-k="'+k+'" aria-pressed="false">'+l+'</button>';
+  }).join('');
+}
+chips('fKind', KINDS, 'kind');
+chips('fPrice', PRICES, 'price');
+chips('fStock', STOCKS, 'stock');
+
+document.querySelectorAll('.chip[data-g]').forEach(function(b){
+  b.onclick = function(){
+    var g = b.dataset.g, k = b.dataset.k, i = F[g].indexOf(k);
+    if (i >= 0) F[g].splice(i,1); else F[g].push(k);
+    b.setAttribute('aria-pressed', String(i < 0));
+    render();
+  };
+});
+
+document.getElementById('filterBtn').onclick = function(){
+  var p = document.getElementById('panel'), open = p.classList.toggle('hide');
+  this.setAttribute('aria-expanded', String(!open));
+};
+document.getElementById('sort').onchange = render;
+function clearAll(){
+  F = { kind:[], price:[], stock:[] };
+  document.querySelectorAll('.chip[data-g]').forEach(function(b){ b.setAttribute('aria-pressed','false'); });
+  render();
+}
+document.getElementById('clearF').onclick = clearAll;
+document.getElementById('clearF2').onclick = clearAll;
+
+function inPrice(p, k){
+  var v = WUHOU.fromPrice(p);
+  return k === 'u1000' ? v < 1000 : k === '1to3' ? (v >= 1000 && v <= 3000) : v > 3000;
+}
+
+function render(){
+  var list = WUHOU.products.filter(function(p){
+    if (F.kind.length && F.kind.indexOf(p.kind) < 0) return false;
+    if (F.price.length && !F.price.some(function(k){ return inPrice(p,k); })) return false;
+    if (F.stock.indexOf('in') >= 0 && !p.options.some(function(o){ return o.stock === 'in'; })) return false;
+    if (F.stock.indexOf('last') >= 0 && !p.options.some(function(o){ return o.last; })) return false;
+    return true;
+  });
+
+  var s = document.getElementById('sort').value;
+  if (s !== 'season') list.sort(function(a,b){
+    var d = WUHOU.fromPrice(a) - WUHOU.fromPrice(b);
+    return s === 'asc' ? d : -d;
+  });
+
+  document.getElementById('grid').innerHTML = list.map(UI.card).join('');
+  document.getElementById('count').textContent = '共 ' + list.length + ' 件';
+  document.getElementById('none').classList.toggle('hide', list.length > 0);
+
+  var n = F.kind.length + F.price.length + F.stock.length;
+  document.getElementById('fn').textContent = n ? '（' + n + '）' : '';
+}
+render();
+</script>
+</body>
+</html>
